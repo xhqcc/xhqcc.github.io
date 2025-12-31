@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026跨年快乐</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(120deg, #000428, #004e92, #00bcd4);
+            background-size: 300% 300%;
+            animation: bgAnimate 12s ease infinite;
+            font-family: "Microsoft YaHei", sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 跨年渐变背景动画 */
+        @keyframes bgAnimate {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 全屏下雪容器：核心结构 */
+        .snow-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw; /* 视口宽度100% */
+            height: 100vh; /* 视口高度100% */
+            pointer-events: none; /* 不遮挡任何点击操作 */
+            z-index: 3; /* 位于背景上层，核心内容下层 */
+            overflow: hidden; /* 隐藏溢出的雪花，保证全屏整洁 */
+        }
+
+        /* 雪花样式：全屏分布 */
+        .snowflake {
+            position: absolute;
+            color: #ffffff;
+            font-size: 12px;
+            user-select: none;
+            opacity: 0;
+            animation: snowfall linear infinite;
+            /* 初始位置超出顶部，保证飘落完整 */
+            top: -20px;
+        }
+
+        /* 雪花飘落动画：全屏垂直飘落，更真实 */
+        @keyframes snowfall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1; /* 飘落时逐渐显现 */
+            }
+            90% {
+                opacity: 1; /* 落地前保持显示 */
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg); /* 落到视口底部消失 */
+                opacity: 0; /* 落地后隐藏 */
+            }
+        }
+
+        /* ########## 粒子感烟花核心样式 ########## */
+        /* 烟花容器：铺满全屏，承载所有粒子 */
+        .firework-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 2; /* 低于雪花，不遮挡下雪效果 */
+            overflow: hidden;
+        }
+
+        /* 烟花粒子：小巧细腻，有扩散+消失动画 */
+        .firework-particle {
+            position: absolute;
+            width: 2px; /* 粒子大小，小巧更有粒子感 */
+            height: 2px;
+            border-radius: 50%; /* 圆形粒子，更细腻 */
+            opacity: 0;
+            animation: fireworkParticleBurst cubic-bezier(0.17, 0.67, 0.83, 0.67) infinite;
+        }
+
+        /* 粒子烟花动画：先扩散，后渐隐，更真实 */
+        @keyframes fireworkParticleBurst {
+            0% {
+                transform: translate(0, 0) scale(0.5);
+                opacity: 1; /* 粒子生成时完全显示 */
+            }
+            50% {
+                transform: translate(var(--particle-offset-x), var(--particle-offset-y)) scale(1);
+                opacity: 0.8; /* 扩散中保持高透明度 */
+            }
+            100% {
+                transform: translate(calc(var(--particle-offset-x) * 1.5), calc(var(--particle-offset-y) * 1.5)) scale(0.2);
+                opacity: 0; /* 扩散结束后消失 */
+            }
+        }
+
+        /* 祝福弹窗（强制显示，不消失） */
+        .blessing-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.98);
+            padding: 40px 50px;
+            border-radius: 20px;
+            box-shadow: 0 0 60px rgba(255, 215, 0, 0.9);
+            text-align: center;
+            z-index: 9999;
+            display: block;
+        }
+
+        .blessing-modal h2 {
+            font-size: 2.2rem;
+            color: #004e92;
+            margin-bottom: 25px;
+            text-shadow: 0 0 8px #ffd700;
+        }
+
+        .name-input {
+            width: 280px;
+            padding: 12px 20px;
+            margin: 15px 0 30px;
+            border: 2px solid #00bcd4;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .name-input:focus {
+            border-color: #004e92;
+            box-shadow: 0 0 12px rgba(0, 78, 146, 0.4);
+        }
+
+        .receive-btn {
+            padding: 14px 45px;
+            font-size: 1.2rem;
+            background: linear-gradient(90deg, #004e92, #00bcd4);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .receive-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .receive-btn:disabled {
+            background: linear-gradient(90deg, #ccc, #999);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 专属祝福语容器 */
+        .blessing {
+            font-size: 2.3rem;
+            color: #fff;
+            text-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700, 0 0 30px #00bcd4;
+            margin-bottom: 60px;
+            line-height: 1.6;
+            text-align: center;
+            padding: 0 20px;
+            opacity: 0;
+            animation: fadeIn 0.8s forwards;
+            z-index: 10;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 2026数字装饰 */
+        .year-2026 {
+            font-size: 8rem;
+            color: #ffd700;
+            text-shadow: 0 0 15px #ffd700, 0 0 30px #ff4500, 0 0 45px #ff4500;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 1s ease 0.5s;
+            z-index: 10;
+        }
+
+        .year-2026.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* 可爱小兔固定右上角（无音乐，只保留萌态） */
+        .cute-bunny {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 90px;
+            height: 110px;
+            z-index: 9998;
+            animation: bunnyBounce 2.5s infinite ease-in-out;
+        }
+
+        @keyframes bunnyBounce {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+        }
+
+        .bunny-character {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .bunny-ear {
+            position: absolute;
+            width: 14px;
+            height: 38px;
+            background: #fff;
+            border-radius: 15px 15px 0 0;
+            box-shadow: inset 2px 2px 5px #eee, 3px 3px 8px rgba(0,0,0,0.2);
+        }
+        .bunny-ear.left { left: 22px; top: 5px; transform: rotate(-12deg); }
+        .bunny-ear.right { right: 22px; top: 5px; transform: rotate(12deg); }
+        .bunny-ear-inner {
+            width: 7px;
+            height: 28px;
+            background: #ffcdd2;
+            border-radius: 8px 8px 0 0;
+            top: 5px;
+            left: 3.5px;
+            position: absolute;
+        }
+
+        .bunny-head {
+            width: 58px;
+            height: 48px;
+            background: #fff;
+            border-radius: 50% 50% 40% 40%;
+            top: 28px;
+            left: 16px;
+            position: absolute;
+            box-shadow: inset 3px 3px 8px #eee, 4px 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .bunny-eye {
+            width: 9px;
+            height: 9px;
+            background: #333;
+            border-radius: 50%;
+            top: 14px;
+            position: absolute;
+            box-shadow: 2px 2px 3px #fff inset;
+        }
+        .bunny-eye.left { left: 14px; }
+        .bunny-eye.right { right: 14px; }
+
+        .bunny-blush {
+            width: 11px;
+            height: 7px;
+            background: #ffcdd2;
+            border-radius: 4px;
+            opacity: 0.8;
+            top: 27px;
+            position: absolute;
+            box-shadow: 0 0 8px #ffb6c1;
+        }
+        .bunny-blush.left { left: 7px; }
+        .bunny-blush.right { right: 7px; }
+
+        .bunny-mouth {
+            width: 7px;
+            height: 7px;
+            border: 2px solid #333;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            top: 31px;
+            left: 25px;
+            position: absolute;
+        }
+
+        .bunny-body {
+            width: 48px;
+            height: 28px;
+            background: #fff;
+            border-radius: 20px 20px 15px 15px;
+            top: 72px;
+            left: 21px;
+            position: absolute;
+            box-shadow: inset 2px 2px 5px #eee, 3px 3px 8px rgba(0,0,0,0.2);
+        }
+
+        .modal-hide {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+            pointer-events: none;
+            transition: all 0.6s ease;
+        }
+
+        /* 响应式适配，手机电脑全屏生效 */
+        @media (max-width: 768px) {
+            .blessing-modal h2 { font-size: 1.8rem; }
+            .name-input { width: 240px; font-size: 1rem; }
+            .receive-btn { padding: 12px 35px; font-size: 1rem; }
+            .blessing { font-size: 1.8rem; }
+            .year-2026 { font-size: 6rem; }
+            .cute-bunny { width: 75px; height: 95px; }
+        }
+
+        @media (max-width: 480px) {
+            .blessing-modal { padding: 30px 35px; }
+            .blessing-modal h2 { font-size: 1.5rem; }
+            .name-input { width: 200px; }
+            .blessing { font-size: 1.5rem; }
+            .year-2026 { font-size: 4.5rem; }
+            .cute-bunny { width: 65px; height: 85px; top: 15px; right: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 全屏下雪容器 -->
+    <div class="snow-container" id="snowContainer"></div>
+
+    <!-- ########## 粒子烟花容器 ########## -->
+    <div class="firework-container" id="fireworkContainer"></div>
+
+    <!-- 可爱小兔 -->
+    <div class="cute-bunny">
+        <div class="bunny-character">
+            <div class="bunny-ear left"><div class="bunny-ear-inner"></div></div>
+            <div class="bunny-ear right"><div class="bunny-ear-inner"></div></div>
+            <div class="bunny-head">
+                <div class="bunny-eye left"></div>
+                <div class="bunny-eye right"></div>
+                <div class="bunny-blush left"></div>
+                <div class="bunny-blush right"></div>
+                <div class="bunny-mouth"></div>
+            </div>
+            <div class="bunny-body"></div>
+        </div>
+    </div>
+
+    <!-- 祝福弹窗（打开就显示，无倒计时） -->
+    <div class="blessing-modal" id="blessingModal">
+        <h2>2026跨年专属祝福</h2>
+        <input type="text" class="name-input" id="nameInput" placeholder="请输入你的名字" maxlength="10">
+        <button class="receive-btn" id="receiveBtn" disabled>接收祝福</button>
+    </div>
+
+    <!-- 祝福语+2026数字 -->
+    <div class="blessing" id="blessing"></div>
+    <div class="year-2026" id="year2026">2026新年快乐</div>
+
+    <script>
+        // 页面加载完成立即初始化
+        window.onload = function() {
+            // 全屏下雪核心函数
+            function createFullScreenSnowflakes() {
+                const snowCount = 150;
+                const snowContainer = document.getElementById('snowContainer');
+                const snowSizes = [10, 12, 14, 16];
+                const fallDurations = [8, 12, 16, 20, 25];
+                const snowChars = ['❄️', '❅', '❆', '☃️'];
+
+                for(let i = 0; i < snowCount; i++) {
+                    const snowflake = document.createElement('div');
+                    snowflake.className = 'snowflake';
+                    snowflake.textContent = snowChars[Math.floor(Math.random() * snowChars.length)];
+                    const randomSize = snowSizes[Math.floor(Math.random() * snowSizes.length)];
+                    snowflake.style.fontSize = `${randomSize}px`;
+                    snowflake.style.left = `${Math.random() * 100}vw`;
+                    const randomDuration = fallDurations[Math.floor(Math.random() * fallDurations.length)] + Math.random() * 6;
+                    snowflake.style.animationDuration = `${randomDuration}s`;
+                    snowflake.style.animationDelay = `${Math.random() * 15}s`;
+                    snowflake.style.opacity = Math.random() * 0.5 + 0.5;
+
+                    snowContainer.appendChild(snowflake);
+                }
+            }
+
+            // ########## 粒子感烟花核心函数 ##########
+            function createParticleFireworks() {
+                const fireworkCount = 40; // 烟花组数，可调整
+                const particleCountPerFirework = 80; // 每组烟花的粒子数量，越多粒子感越浓
+                const fireworkContainer = document.getElementById('fireworkContainer');
+                const fireworkColors = ['#ffd700', '#ff4500', '#00bcd4', '#ff69b4', '#32cd32', '#ff1493', '#ffffff']; // 粒子颜色
+
+                for(let i = 0; i < fireworkCount; i++) {
+                    // 随机烟花爆炸位置（全屏分布）
+                    const fireworkX = Math.random() * 100 + 'vw';
+                    const fireworkY = Math.random() * 100 + 'vh';
+                    // 随机烟花动画时长
+                    const fireworkDuration = Math.random() * 4 + 3 + 's';
+                    // 随机延迟，避免同时爆炸
+                    const fireworkDelay = Math.random() * 15 + 's';
+
+                    // 创建每组烟花的所有粒子
+                    for(let j = 0; j < particleCountPerFirework; j++) {
+                        const particle = document.createElement('div');
+                        particle.className = 'firework-particle';
+                        // 随机粒子颜色
+                        particle.style.backgroundColor = fireworkColors[Math.floor(Math.random() * fireworkColors.length)];
+                        // 定位到烟花爆炸中心点
+                        particle.style.left = fireworkX;
+                        particle.style.top = fireworkY;
+                        // 随机粒子扩散偏移量（实现放射状扩散）
+                        const offsetX = (Math.random() - 0.5) * 100; // 左右扩散范围
+                        const offsetY = (Math.random() - 0.5) * 100; // 上下扩散范围
+                        particle.style.setProperty('--particle-offset-x', `${offsetX}px`);
+                        particle.style.setProperty('--particle-offset-y', `${offsetY}px`);
+                        // 粒子动画时长和延迟，与对应烟花保持一致
+                        particle.style.animationDuration = fireworkDuration;
+                        particle.style.animationDelay = fireworkDelay;
+
+                        fireworkContainer.appendChild(particle);
+                    }
+                }
+            }
+
+            // 3. 逐字显示专属跨年祝福
+            function typeWriter(text, ele, speed, callback) {
+                let i = 0;
+                ele.textContent = '';
+                const timer = setInterval(() => {
+                    if(i < text.length) {
+                        ele.textContent += text.charAt(i);
+                        i++;
+                    } else {
+                        clearInterval(timer);
+                        callback && callback();
+                    }
+                }, speed);
+            }
+
+            // 4. 2026跨年祝福模板（专属定制）
+            function get2026Blessing(name) {
+                const blessings = [
+                    `${name}，2026跨年快乐！新的一年，日子滚烫，万事顺心，岁岁无忧，年年皆胜意！`,
+                    `祝${name}2026新年安康！前路浩浩荡荡，万事尽可期待，三餐四季温暖，岁岁年年平安！`,
+                    `${name}，辞旧迎新跨新年，2026愿你眼里有光，心中有爱，不负时光，不负自己，喜乐常伴！`,
+                    `2026新年快乐${name}！无灾无难无病痛，有钱有闲有欢喜，所念皆如愿，所行皆坦途！`,
+                    `${name}，跨年迎新启新程，2026愿你春去秋往万事胜意，山高水长终有回甘，平安喜乐常相伴！`,
+                    `祝${name}2026跨年大吉！日子红火事业旺，家人和睦常欢笑，暴富暴美运气好，岁岁长安宁！`,
+                    `${name}，2026新岁启封！愿你朝朝暮暮有欢喜，年年岁岁皆胜意，三餐烟火暖，四季皆安然！`,
+                    `2026跨年安康${name}！愿你眼里有星辰，心中有山海，不负韶华不负梦，万事顺意多喜乐！`
+                ];
+                return blessings[Math.floor(Math.random() * blessings.length)];
+            }
+
+            // 初始化全屏下雪、粒子烟花（无倒计时）
+            createFullScreenSnowflakes();
+            createParticleFireworks();
+
+            // 获取页面元素
+            const modal = document.getElementById('blessingModal');
+            const nameInput = document.getElementById('nameInput');
+            const receiveBtn = document.getElementById('receiveBtn');
+            const blessingEle = document.getElementById('blessing');
+            const year2026 = document.getElementById('year2026');
+            const typeSpeed = 130;
+
+            // 输入名字启用按钮
+            nameInput.addEventListener('input', () => {
+                receiveBtn.disabled = !nameInput.value.trim();
+            });
+
+            // 接收祝福触发核心流程
+            receiveBtn.addEventListener('click', () => {
+                const name = nameInput.value.trim();
+                if(!name) return;
+
+                // 隐藏弹窗
+                modal.classList.add('modal-hide');
+                // 显示祝福语+2026数字
+                setTimeout(() => {
+                    const blessingText = get2026Blessing(name);
+                    typeWriter(blessingText, blessingEle, typeSpeed, () => {
+                        year2026.classList.add('show');
+                    });
+                }, 600);
+            });
+        };
+    </script>
+</body>
+</html>
